@@ -7,9 +7,6 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.database.sqlite.SQLiteQueryBuilder
 import android.widget.Toast
-import java.nio.ByteOrder
-import java.util.*
-import kotlin.reflect.KTypeProjection
 
 class DB_Manager {
     //Database Name
@@ -23,7 +20,8 @@ class DB_Manager {
     //Database Version
     var dbVersion=1
     //Create table if not exist in database(ID INTEGER PRIMERY_KEY,TITLE:TEXT,DESCRIPTION:TEXT)
-    val sqlCreateTable="CREATE TABLE IF NOT EXISTS"+dbTable+"("+colID+"INTEGER PRIMARY KEY,"+colTitle+"TEXT,"+colDesc+"TEXT);"
+    val sqlCreateTable =
+        "CREATE TABLE IF NOT EXISTS " + dbTable + " (" + colID + " INTEGER PRIMARY KEY, " + colTitle + " TEXT, " + colDesc + " TEXT);"
     var sqlDB:SQLiteDatabase?=null
 
     constructor(context: Context){
@@ -56,7 +54,7 @@ db!!.execSQL("DROP TABLE IF EXISTS"+dbTable)
     }
     fun Query(projection:Array<String>,selection:String,selectionArgs:Array<String>,sorOrder:String):Cursor{
 
-        val qb=SQLiteQueryBuilder();
+        val qb = SQLiteQueryBuilder()
         qb.tables=dbTable
         var cursor=qb.query(sqlDB,projection,selection,selectionArgs,null,null,sorOrder)
         return cursor
