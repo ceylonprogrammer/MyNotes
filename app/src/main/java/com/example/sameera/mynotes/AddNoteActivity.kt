@@ -19,7 +19,7 @@ class AddNoteActivity : AppCompatActivity() {
             val bundle: Bundle = intent.extras
             id = bundle.getInt("ID", 0)
             if (id != 0) {
-                titleEditText.setText(bundle.getString("Name"))
+                titleEditText.setText(bundle.getString("name"))
                 descEditText.setText(bundle.getString("desc"))
             }
         } catch (ex: Exception) {
