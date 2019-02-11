@@ -1,9 +1,11 @@
 package com.example.sameera.mynotes
 
+import android.app.AlertDialog
 import android.app.SearchManager
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.SearchView
@@ -20,26 +22,56 @@ class MainActivity : AppCompatActivity() {
 
     var listNotes = ArrayList<Note>()
 
+    //Shared preferences
+    var mSharedPreferances: SharedPreferences? = null
+
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        mSharedPreferances = this.getSharedPreferences("My_Data", android.content.Context.MODE_PRIVATE)
+
+        //Load newest first soring as Default settings to sort
+        //Always show newest first when app is open
+        var mSorting = mSharedPreferances!!.getString("Sort", "newest")
+        when (mSorting) {
+            "newest" -> loadQueryNewest("%")
+            "oldest" -> loadQueryOldest("%")
+            "ascending" -> loadQueryAscending("%")
+            "descending" -> loadQueryDescending("%")
+        }
+
         //Load from DB
-        LoadQuery("%")
+//        loadQueryAscending("%")
     }
 
 
     override fun onResume() {
         super.onResume()
-        LoadQuery("%")
+//        loadQueryAscending("%")
+        //Load newest first soring as Default settings to sort
+        //Always show newest first when app is open
+        var mSorting = mSharedPreferances!!.getString("Sort", "newest")
+        when (mSorting) {
+            "newest" -> loadQueryNewest("%")
+            "oldest" -> loadQueryOldest("%")
+            "ascending" -> loadQueryAscending("%")
+            "descending" -> loadQueryDescending("%")
+        }
     }
 
-    private fun LoadQuery(title: String) {
+    private fun loadQueryAscending(title: String) {
         var dbManager = DB_Manager(this)
         var projections = arrayOf("ID", "Title", "Description")
         var selectionArgs = arrayOf(title)
+        //Sort by title
+
         var cursor = dbManager.Query(projections, "Title like ?", selectionArgs, "Title")
         listNotes.clear()
+        //Ascending sorting
+
         if (cursor.moveToFirst()) {
             do {
                 val ID = cursor.getInt(cursor.getColumnIndex("ID"))
@@ -66,6 +98,115 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun loadQueryDescending(title: String) {
+        var dbManager = DB_Manager(this)
+        var projections = arrayOf("ID", "Title", "Description")
+        var selectionArgs = arrayOf(title)
+        //Sort by title
+
+        var cursor = dbManager.Query(projections, "Title like ?", selectionArgs, "Title")
+        listNotes.clear()
+        //Descending sorting
+
+        if (cursor.moveToLast()) {
+            do {
+                val ID = cursor.getInt(cursor.getColumnIndex("ID"))
+                val Title = cursor.getString(cursor.getColumnIndex("Title"))
+                val Description = cursor.getString(cursor.getColumnIndex("Description"))
+
+                listNotes.add(Note(ID, Title, Description))
+            } while (cursor.moveToPrevious())
+        }
+        //Adapter
+        var myNotesAdapter = MyNotesAdapter(this, listNotes)
+
+        //Set Adapter
+        notesListView.adapter = myNotesAdapter
+
+        //Get total number of task from the ListView
+        val total = notesListView.count
+
+        //Action Bar
+        val mActionBar = supportActionBar
+        if (mActionBar != null) {
+            //set actionbar as subtitle of actionbar
+            mActionBar.subtitle = "You have $total of Note(s) in the list"
+        }
+    }
+
+    private fun loadQueryNewest(title: String) {
+        var dbManager = DB_Manager(this)
+        var projections = arrayOf("ID", "Title", "Description")
+        var selectionArgs = arrayOf(title)
+        //Sort by ID
+
+        var cursor = dbManager.Query(projections, "ID like ?", selectionArgs, "ID")
+        listNotes.clear()
+        //Newest First Sorting
+
+        if (cursor.moveToLast()) {
+            do {
+                val ID = cursor.getInt(cursor.getColumnIndex("ID"))
+                val Title = cursor.getString(cursor.getColumnIndex("Title"))
+                val Description = cursor.getString(cursor.getColumnIndex("Description"))
+
+                listNotes.add(Note(ID, Title, Description))
+            } while (cursor.moveToPrevious())
+        }
+        //Adapter
+        var myNotesAdapter = MyNotesAdapter(this, listNotes)
+
+        //Set Adapter
+        notesListView.adapter = myNotesAdapter
+
+        //Get total number of task from the ListView
+        val total = notesListView.count
+
+        //Action Bar
+        val mActionBar = supportActionBar
+        if (mActionBar != null) {
+            //set actionbar as subtitle of actionbar
+            mActionBar.subtitle = "You have $total of Note(s) in the list"
+        }
+    }
+
+    private fun loadQueryOldest(title: String) {
+        var dbManager = DB_Manager(this)
+        var projections = arrayOf("ID", "Title", "Description")
+        var selectionArgs = arrayOf(title)
+        //Sort by ID
+
+        var cursor = dbManager.Query(projections, "ID like ?", selectionArgs, "ID")
+        listNotes.clear()
+        //Oldest First Sorting .Show oldest records first .Lesser Big ID shows first
+
+        if (cursor.moveToFirst()) {
+            do {
+                val ID = cursor.getInt(cursor.getColumnIndex("ID"))
+                val Title = cursor.getString(cursor.getColumnIndex("Title"))
+                val Description = cursor.getString(cursor.getColumnIndex("Description"))
+
+                listNotes.add(Note(ID, Title, Description))
+            } while (cursor.moveToNext())
+        }
+        //Adapter
+        var myNotesAdapter = MyNotesAdapter(this, listNotes)
+
+        //Set Adapter
+        notesListView.adapter = myNotesAdapter
+
+        //Get total number of task from the ListView
+        val total = notesListView.count
+
+        //Action Bar
+        val mActionBar = supportActionBar
+        if (mActionBar != null) {
+            //set actionbar as subtitle of actionbar
+            mActionBar.subtitle = "You have $total of Note(s) in the list"
+        }
+    }
+
+
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.main_menu, menu)
 
@@ -76,12 +217,12 @@ class MainActivity : AppCompatActivity() {
         sv.setSearchableInfo(sm.getSearchableInfo(componentName))
         sv.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
-                LoadQuery("" + query + "%")
+                loadQueryAscending("" + query + "%")
                 return false
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
-                LoadQuery("" + newText + "%")
+                loadQueryAscending("" + newText + "%")
                 return true
             }
         })
@@ -94,12 +235,62 @@ class MainActivity : AppCompatActivity() {
                 R.id.addNote -> {
                     startActivity(Intent(this, AddNoteActivity::class.java))
                 }
-                R.id.action_settings -> {
-                    Toast.makeText(this, "Settings", Toast.LENGTH_SHORT).show()
+                R.id.action_sort -> {
+                    // Toast.makeText(this, "Settings", Toast.LENGTH_SHORT).show()
+                    //Show sorting dialog
+                    showSortDialog()
                 }
             }
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    private fun showSortDialog() {
+        //List of sorting option available
+        val sortOptions = arrayOf("Newest", "Oldest", "Title(Ascending)", "Title(Descending)")
+        val mBuilder = AlertDialog.Builder(this)
+        mBuilder.setTitle("Sort by")
+        mBuilder.setIcon(R.drawable.ic_action_sort)
+        mBuilder.setSingleChoiceItems(sortOptions, -1) { dialogInterface, i ->
+            if (i == 0) {
+                //Show Newest First
+                Toast.makeText(this, "Newest", Toast.LENGTH_SHORT).show()
+                val editor = mSharedPreferances!!.edit()
+                editor.putString("Sort", "newest") //Where 'Sort' is key and 'newest' is value
+                editor.apply()//Apply and save the value in our shared Preferences
+                loadQueryNewest("%")
+            }
+            if (i == 1) {
+                //Show Oldest First
+                Toast.makeText(this, "Oldest", Toast.LENGTH_SHORT).show()
+                val editor = mSharedPreferances!!.edit()
+                editor.putString("Sort", "oldest") //Where 'Sort' is key and 'oldest' is value
+                editor.apply()//Apply and save the value in our shared Preferences
+                loadQueryOldest("%")
+
+            }
+            if (i == 2) {
+                //Title Ascending
+                Toast.makeText(this, "Title(Ascending)", Toast.LENGTH_SHORT).show()
+                val editor = mSharedPreferances!!.edit()
+                editor.putString("Sort", "ascending") //Where 'Sort' is key and 'ascending' is value
+                editor.apply()//Apply and save the value in our shared Preferences
+                loadQueryAscending("%")
+
+            }
+            if (i == 3) {
+                //Title Descending
+                Toast.makeText(this, "Title(Descending)", Toast.LENGTH_SHORT).show()
+                val editor = mSharedPreferances!!.edit()
+                editor.putString("Sort", "descending") //Where 'Sort' is key and 'descending' is value
+                editor.apply()//Apply and save the value in our shared Preferences
+                loadQueryDescending("%")
+
+            }
+            dialogInterface.dismiss()
+        }
+        val mDialog = mBuilder.create()
+        mDialog.show()
     }
 
     inner class MyNotesAdapter : BaseAdapter {
@@ -123,7 +314,7 @@ class MainActivity : AppCompatActivity() {
                 var dbManager = DB_Manager(this.context!!)
                 val selectionArgs = arrayOf(myNote.nodeID.toString())
                 dbManager.delete("ID=?", selectionArgs)
-                LoadQuery("%")
+                loadQueryAscending("%")
             }
             //Edit and Update Button clicked
             myView.editBtn.setOnClickListener {
